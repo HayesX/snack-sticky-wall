@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>零食便签墙 · 今天吃什么</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#4a3728;
+    --paper:#fffdf3;
+    --wood-a:#8a5527; --wood-b:#9a6533; --wood-c:#7d4e22;
+    --cork:#c08a52;
+    --accent:#e63946;
+    --hand:'Ma Shan Zheng','STKaiti','KaiTi',cursive;
+    --body:'ZCOOL KuaiLe','Yuanti SC','YouYuan','Microsoft YaHei',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  [hidden]{ display:none !important; }
+  body{
+    margin:0; padding:30px 14px 46px;
+    font-family:var(--body); color:var(--ink);
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(255,214,150,.16), transparent 55%),
+      linear-gradient(160deg,#5d3a1a,#472c11 70%,#3c240d);
+    min-height:100vh;
+  }
+
+  /* ===== 木框 + 软木板 ===== */
+  .board{
+    max-width:1180px; margin:0 auto; padding:20px; border-radius:22px;
+    background:
+      linear-gradient(rgba(255,255,255,.07), rgba(0,0,0,.16)),
+      repeating-linear-gradient(92deg, var(--wood-a) 0 14px, var(--wood-b) 14px 27px, var(--wood-c) 27px 42px);
+    box-shadow: 0 26px 60px rgba(0,0,0,.55), inset 0 2px 2px rgba(255,255,255,.28);
+  }
+  .cork{
+    border-radius:12px; padding:34px 26px 42px;
+    background-color:var(--cork);
+    background-image:
+      radial-gradient(rgba(94,58,24,.20) 1.2px, transparent 1.7px),
+      radial-gradient(rgba(255,235,205,.16) 1px, transparent 1.5px),
+      radial-gradient(rgba(70,40,15,.14) 1.6px, transparent 2.1px);
+    background-size: 23px 23px, 31px 31px, 43px 43px;
+    background-position: 0 0, 11px 7px, 5px 16px;
+    box-shadow: inset 0 0 80px rgba(60,30,5,.5), inset 0 2px 8px rgba(0,0,0,.4);
+  }
+
+  /* ===== 标题区 ===== */
+  .header{ display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start; justify-content:center; margin-bottom:30px; }
+  .title-note{
+    position:relative; background:#ffe985; padding:26px 44px 20px;
+    transform:rotate(-2deg); box-shadow:0 12px 22px rgba(60,30,5,.35);
+  }
+  .title-note h1{ margin:0; font-family:var(--hand); font-weight:normal; font-size:clamp(34px,6vw,52px); letter-spacing:4px; }
+  .title-note p{ margin:6px 0 0; font-size:15px; opacity:.8; }
+  .sub-note{
+    position:relative; background:var(--paper); max-width:280px;
+    padding:26px 20px 18px; transform:rotate(1.6deg);
+    box-shadow:0 10px 18px rgba(60,30,5,.3); font-size:15px; line-height:1.7;
+  }
+  .sub-note b{ color:#c8451f; }
+
+  /* ===== 图钉 & 胶带 ===== */
+  .pin{
+    position:absolute; top:9px; left:50%; margin-left:-9px; width:18px; height:18px; border-radius:50%;
+    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.9), rgba(255,255,255,0) 44%), var(--pc,#e63946);
+    box-shadow: 0 4px 5px rgba(0,0,0,.35), inset -2px -3px 6px rgba(0,0,0,.35);
+  }
+  .tape{
+    position:absolute; top:-11px; left:50%; width:78px; height:24px;
+    transform:translateX(-50%) rotate(var(--tr,-2deg));
+    background:rgba(255,252,238,.52); border:1px solid rgba(255,255,255,.4);
+    box-shadow:0 2px 4px rgba(0,0,0,.14);
+  }
+
+  /* ===== 筛选面板（一张大纸条） ===== */
+  .panel{
+    position:relative; background:var(--paper); border-radius:4px;
+    background-image: repeating-linear-gradient(transparent 0 27px, rgba(74,55,40,.06) 27px 28px);
+    padding:30px 26px 24px; margin:0 auto 34px; max-width:920px;
+    box-shadow:0 12px 24px rgba(60,30,5,.32); transform:rotate(.4deg);
+  }
+  .panel .tape:nth-of-type(1){ left:12%; }
+  .panel .tape:nth-of-type(2){ left:88%; --tr:3deg; }
+  .panel-title{ font-family:var(--hand); font-size:26px; margin-bottom:14px; }
+  .panel-title span{ font-size:14px; font-family:var(--body); opacity:.6; margin-left:10px; }
+  .group{ display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin:10px 0; }
+  .g-label{ font-family:var(--hand); font-size:20px; width:74px; color:#8a4b12; }
+  .chip{
+    font-family:var(--body); font-size:15px; color:var(--ink);
+    background:#fff; border:2px dashed rgba(74,55,40,.28); border-radius:5px;
+    padding:6px 15px; cursor:pointer; box-shadow:0 2px 0 rgba(74,55,40,.12);
+    transform:rotate(var(--r,0deg)); transition:all .18s ease;
+  }
+  .chip:nth-child(odd){ --r:-1.2deg; } .chip:nth-child(even){ --r:1deg; }
+  .chip:hover{ transform:rotate(0deg) translateY(-2px); }
+  .chip.on{
+    background:#ffdf6b; border:2px solid #e8a200; transform:rotate(0deg) scale(1.07);
+    box-shadow:0 4px 10px rgba(0,0,0,.2); font-weight:bold;
+  }
+  .chip.toggle.on{ background:#c9f2d0; border-color:#2a9d34; }
+  .actions{ display:flex; flex-wrap:wrap; gap:18px; align-items:center; margin-top:20px; justify-content:center; }
+  .big-btn{
+    font-family:var(--hand); font-size:27px; letter-spacing:2px; color:#5c2a00;
+    background:#ffb14e; border:none; border-radius:8px; padding:12px 34px; cursor:pointer;
+    transform:rotate(-1.4deg); box-shadow:0 7px 0 #d97f1e, 0 12px 20px rgba(0,0,0,.28);
+    transition:all .12s ease;
+  }
+  .big-btn:hover{ transform:rotate(-1.4deg) translateY(-2px); }
+  .big-btn:active{ transform:rotate(-1.4deg) translateY(5px); box-shadow:0 2px 0 #d97f1e, 0 5px 10px rgba(0,0,0,.25); }
+  .lucky-btn{
+    font-family:var(--hand); font-size:21px; color:#0c4a2e;
+    background:#a5e6bd; border:none; border-radius:8px; padding:10px 24px; cursor:pointer;
+    transform:rotate(1.2deg); box-shadow:0 6px 0 #57a975, 0 10px 16px rgba(0,0,0,.24);
+    transition:all .12s ease;
+  }
+  .lucky-btn:active{ transform:rotate(1.2deg) translateY(4px); box-shadow:0 2px 0 #57a975; }
+
+  /* ===== 结果区 ===== */
+  .result{ text-align:center; margin:0 auto 38px; }
+  .result-title{
+    display:inline-block; font-family:var(--hand); font-weight:normal; font-size:28px;
+    background:#fff; padding:8px 30px; transform:rotate(-1deg);
+    box-shadow:0 8px 16px rgba(60,30,5,.3); margin:0 0 24px; position:relative;
+  }
+  .main-note{
+    position:relative; width:min(360px,90vw); margin:14px auto 0; padding:44px 26px 26px;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    box-shadow:0 18px 34px rgba(60,30,5,.42); transform:rotate(-1deg);
+    animation:pop .55s cubic-bezier(.34,1.56,.64,1);
+  }
+  .main-note .emoji{ font-size:66px; filter:drop-shadow(0 4px 4px rgba(0,0,0,.2)); }
+  .main-note .name{ font-family:var(--hand); font-size:32px; letter-spacing:2px; }
+  .ribbon{
+    position:absolute; top:20px; right:-26px; transform:rotate(8deg);
+    background:var(--accent); color:#fff; font-size:14px; letter-spacing:2px;
+    padding:5px 30px; box-shadow:0 4px 8px rgba(0,0,0,.32);
+  }
+  .tags{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:4px; }
+  .tag{
+    font-size:12px; background:rgba(255,255,255,.62); border-radius:9px; padding:2px 10px;
+    box-shadow:0 1px 2px rgba(0,0,0,.1);
+  }
+  .stars{ color:#e07b00; font-size:16px; letter-spacing:2px; }
+  .reason{
+    margin-top:10px; width:100%; text-align:left; font-size:15px; line-height:1.7;
+    background:rgba(255,255,255,.6); border-left:4px solid #e07b00; padding:9px 12px;
+  }
+  .reason b{ color:#c8451f; }
+  .detail-open{
+    margin-top:12px; font-family:var(--body); font-size:14px; cursor:pointer;
+    background:#fff; border:2px solid rgba(74,55,40,.3); border-radius:6px; padding:6px 16px;
+    transition:all .15s;
+  }
+  .detail-open:hover{ background:#ffdf6b; border-color:#e8a200; transform:translateY(-2px); }
+  .alt-title{ margin:30px 0 4px; font-family:var(--hand); font-size:22px; color:#6d3d12; }
+  .alts{ display:flex; gap:24px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
+  .alt-note{
+    position:relative; width:158px; padding:32px 12px 16px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    box-shadow:0 10px 18px rgba(60,30,5,.3); transform:rotate(var(--rot,2deg));
+    transition:transform .2s, box-shadow .2s; animation:pop .5s backwards cubic-bezier(.34,1.56,.64,1);
+  }
+  .alt-note:nth-child(2){ animation-delay:.12s; }
+  .alt-note:hover{ transform:rotate(0deg) translateY(-6px) scale(1.05); box-shadow:0 16px 28px rgba(60,30,5,.42); z-index:4; }
+  .alt-note .emoji{ font-size:36px; } .alt-note .name{ font-size:16px; font-weight:bold; }
+  .again-btn{
+    margin-top:28px; font-family:var(--hand); font-size:21px; color:#4a1d6e;
+    background:#d9c7f2; border:none; border-radius:8px; padding:9px 26px; cursor:pointer;
+    transform:rotate(-1deg); box-shadow:0 5px 0 #9d7bc9, 0 9px 14px rgba(0,0,0,.22);
+    transition:all .12s;
+  }
+  .again-btn:active{ transform:rotate(-1deg) translateY(4px); box-shadow:0 1px 0 #9d7bc9; }
+  .empty-note{
+    width:min(340px,88vw); margin:10px auto 0; background:#efe9dc; padding:34px 24px;
+    transform:rotate(-1.4deg); box-shadow:0 12px 22px rgba(60,30,5,.32);
+    font-size:17px; line-height:1.9; position:relative;
+  }
+
+  /* ===== 便签墙 ===== */
+  .wall-head{ text-align:center; color:rgba(255,246,230,.85); font-size:14px; margin-bottom:18px; letter-spacing:1px; }
+  .wall{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr));
+    gap:30px 24px; padding:6px 4px;
+  }
+  .note{
+    position:relative; min-height:152px; padding:32px 12px 26px;
+    display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center;
+    cursor:pointer; box-shadow:0 10px 18px rgba(60,30,5,.3);
+    transform:rotate(var(--rot,0deg));
+    transition:transform .22s ease, box-shadow .22s ease, opacity .35s ease, filter .35s ease;
+    animation:drop .5s ease-out backwards;
+  }
+  .note:hover{ transform:rotate(0deg) translateY(-8px) scale(1.05); box-shadow:0 20px 32px rgba(60,30,5,.45); z-index:6; }
+  .note .emoji{ font-size:40px; filter:drop-shadow(0 3px 3px rgba(0,0,0,.18)); }
+  .note .name{ font-size:17px; font-weight:bold; line-height:1.3; }
+  .note .meta{ font-size:12px; opacity:.72; }
+  .note .price{
+    position:absolute; bottom:8px; right:9px; font-size:13px;
+    background:rgba(255,255,255,.6); padding:1px 8px; border-radius:9px; transform:rotate(3deg);
+  }
+  .note::after{ /* 折角 */
+    content:''; position:absolute; right:0; bottom:0; width:22px; height:22px;
+    background:linear-gradient(45deg, transparent 47%, var(--fold,#d9c76a) 50%);
+    box-shadow:-3px -3px 6px rgba(0,0,0,.07);
+  }
+  .note.dim{ opacity:.2; filter:grayscale(.75); }
+  .note.hit{ animation:wiggle .55s ease; box-shadow:0 0 0 3px #ffd23f, 0 14px 26px rgba(60,30,5,.4); }
+  .note.champ{ box-shadow:0 0 0 4px #ff7a3c, 0 16px 30px rgba(60,30,5,.48); }
+
+  .foot{ text-align:center; color:rgba(255,246,230,.66); font-size:13px; margin-top:34px; letter-spacing:1px; }
+
+  /* ===== 详情弹层 ===== */
+  .overlay{
+    position:fixed; inset:0; z-index:60; background:rgba(40,22,5,.58);
+    backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .detail{
+    position:relative; width:min(380px,92vw); background:#fff3b8; padding:40px 28px 26px;
+    transform:rotate(-1deg); box-shadow:0 26px 60px rgba(0,0,0,.5);
+    animation:pop .38s cubic-bezier(.34,1.56,.64,1);
+    display:flex; flex-direction:column; align-items:center; gap:9px; text-align:center;
+  }
+  .detail .tape{ width:110px; }
+  .detail .emoji{ font-size:60px; }
+  .detail .name{ font-family:var(--hand); font-size:30px; letter-spacing:2px; }
+  .detail .info{ font-size:14px; line-height:2; opacity:.85; }
+  .detail .desc{
+    font-size:15px; line-height:1.8; background:rgba(255,255,255,.55);
+    padding:10px 14px; width:100%; text-align:left; margin-top:4px;
+  }
+  .detail .desc b, .detail .reason b{ color:#c8451f; }
+  .detail .reason{ border-left-color:#c8451f; }
+  .close-btn{
+    margin-top:14px; font-family:var(--body); font-size:15px; cursor:pointer;
+    background:var(--accent); color:#fff; border:none; border-radius:7px; padding:8px 24px;
+    box-shadow:0 4px 0 #a52833; transition:all .12s;
+  }
+  .close-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #a52833; }
+
+  @keyframes drop{ from{ opacity:0; transform:translateY(-28px) rotate(var(--rot,0deg)) scale(.9); } }
+  @keyframes pop{ from{ opacity:0; transform:scale(.5) rotate(-7deg); } }
+  @keyframes wiggle{
+    0%,100%{ transform:rotate(var(--rot,0deg)); }
+    25%{ transform:rotate(calc(var(--rot,0deg) + 3.5deg)) scale(1.07); }
+    75%{ transform:rotate(calc(var(--rot,0deg) - 3.5deg)) scale(1.07); }
+  }
+  @media (max-width:560px){
+    .cork{ padding:26px 14px 34px; }
+    .g-label{ width:100%; }
+    .ribbon{ right:-8px; }
+  }
+</style>
+</head>
+<body>
+<div class="board">
+  <div class="cork">
+
+    <header class="header">
+      <div class="title-note">
+        <span class="pin" style="--pc:#e63946"></span>
+        <h1>零食便签墙</h1>
+        <p>—— 今天想吃点啥？撕一张便签，让快乐自己找上门 ——</p>
+      </div>
+      <div class="sub-note">
+        <span class="tape"></span>
+        选口味、挑场景、定预算，<br>然后大喊一声 <b>「就决定是你了！」</b><br>墙上的便签会替你做出命运的选择 😋
+      </div>
+    </header>
+
+    <section class="panel">
+      <span class="tape"></span><span class="tape"></span>
+      <div class="panel-title">✂️ 撕便签三步走 <span>（条件可叠加，也可以全都不选直接摇）</span></div>
+      <div class="group">
+        <span class="g-label">口味</span>
+        <button type="button" class="chip on" data-g="taste" data-v="">不限</button>
+        <button type="button" class="chip" data-g="taste" data-v="甜">🍬 甜</button>
+        <button type="button" class="chip" data-g="taste" data-v="辣">🌶️ 辣</button>
+        <button type="button" class="chip" data-g="taste" data-v="咸">🥨 咸</button>
+        <button type="button" class="chip" data-g="taste" data-v="酸">🍋 酸</button>
+      </div>
+      <div class="group">
+        <span class="g-label">场景</span>
+        <button type="button" class="chip on" data-g="scene" data-v="">不限</button>
+        <button type="button" class="chip" data-g="scene" data-v="追剧">📺 追剧</button>
+        <button type="button" class="chip" data-g="scene" data-v="办公室">💼 办公室</button>
+        <button type="button" class="chip" data-g="scene" data-v="深夜放毒">🌙 深夜放毒</button>
+        <button type="button" class="chip" data-g="scene" data-v="野餐出游">🧺 野餐出游</button>
+        <button type="button" class="chip" data-g="scene" data-v="解馋抗压">😤 解馋抗压</button>
+      </div>
+      <div class="group">
+        <span class="g-label">预算</span>
+        <button type="button" class="chip on" data-g="budget" data-v="">不限</button>
+        <button type="button" class="chip" data-g="budget" data-v="lt5">💰 5元以内</button>
+        <button type="button" class="chip" data-g="budget" data-v="5to10">💰 5~10元</button>
+        <button type="button" class="chip" data-g="budget" data-v="gt10">💰 10元以上</button>
+        <button type="button" class="chip toggle" id="slimChip">🥗 怕胖模式（只看低卡）</button>
+      </div>
+      <div class="actions">
+        <button type="button" class="big-btn" id="goBtn">📌 就决定是你了！</button>
+        <button type="button" class="lucky-btn" id="luckyBtn">🎲 随便撕一张</button>
+      </div>
+    </section>
+
+    <section class="result" id="result" hidden>
+      <h2 class="result-title"><span class="pin" style="--pc:#3a86ff; top:6px;"></span> 命运的选择结果</h2>
+      <div id="resultBody"></div>
+      <button type="button" class="again-btn" id="againBtn">🔁 不满意？换一批</button>
+    </section>
+
+    <p class="wall-head">—— 墙上共 <span id="wallCount"></span> 张零食便签 · 点任意一张查看详细介绍 ——</p>
+    <section class="wall" id="wall"></section>
+
+    <p class="foot">零食便签墙 · 手工软木板打造 · 吃饱了才有力气减肥</p>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="detail" id="detailCard"></div>
+</div>
+
+<script>
+const SNACKS = [
+  { name:'大刀肉辣条', emoji:'🌶️', taste:['辣'], scenes:['追剧','解馋抗压'], price:3, cal:'高', stars:5,
+    desc:'麻辣甜咸四味交织，一口回到放学路上的小卖部。',
+    reason:'辣得直接、便宜大碗，追剧时嘴巴绝不寂寞。' },
+  { name:'黄瓜味薯片', emoji:'🥔', taste:['咸'], scenes:['追剧','办公室'], price:6, cal:'高', stars:4,
+    desc:'清爽黄瓜香，咔嚓咔嚓根本停不下来。',
+    reason:'咸香脆口开袋即分享，办公室社交硬通货。' },
+  { name:'每日坚果', emoji:'🌰', taste:['咸'], scenes:['办公室'], price:4, cal:'中', stars:4,
+    desc:'坚果果干科学配比，一小包刚刚好。',
+    reason:'优质脂肪补脑续命，加班吃着也不罪恶。' },
+  { name:'冻干草莓', emoji:'🍓', taste:['甜','酸'], scenes:['办公室','野餐出游'], price:9, cal:'低', stars:5,
+    desc:'整颗草莓冻干，酸甜酥脆入口即化。',
+    reason:'低卡解馋还开胃，颜值高到舍不得吃。' },
+  { name:'魔芋爽', emoji:'🍢', taste:['辣'], scenes:['深夜放毒','解馋抗压'], price:2, cal:'低', stars:5,
+    desc:'素毛肚口感，香辣爽滑热量还低。',
+    reason:'深夜嘴馋又怕胖？它就是为你发明的。' },
+  { name:'鱿鱼丝', emoji:'🦑', taste:['咸'], scenes:['追剧','解馋抗压'], price:10, cal:'中', stars:4,
+    desc:'鲜甜有嚼劲，越嚼越香。',
+    reason:'耐嚼又解压，一集剧撕一条刚刚好。' },
+  { name:'风干牛肉干', emoji:'🐂', taste:['咸'], scenes:['办公室','解馋抗压'], price:15, cal:'中', stars:5,
+    desc:'草原风干工艺，高蛋白硬核肉感。',
+    reason:'蛋白质拉满，扛饿解馋两不误，就是有点小贵。' },
+  { name:'麻薯团子', emoji:'🍡', taste:['甜'], scenes:['办公室','野餐出游'], price:7, cal:'中', stars:4,
+    desc:'软糯拉丝，外皮Q弹内馅香甜。',
+    reason:'下午茶配茶绝了，软糯治愈一整天。' },
+  { name:'沙琪玛', emoji:'🍯', taste:['甜'], scenes:['办公室','追剧'], price:5, cal:'高', stars:3,
+    desc:'老式甜蜜风味，松软不粘牙。',
+    reason:'配茶经典组合，甜度预警但快乐真实。' },
+  { name:'海苔脆片', emoji:'🌿', taste:['咸'], scenes:['办公室','深夜放毒'], price:6, cal:'低', stars:4,
+    desc:'薄脆海苔夹心芝麻，咔嚓作响。',
+    reason:'咔嚓脆还不怕胖，深夜良心之选。' },
+  { name:'85%黑巧克力', emoji:'🍫', taste:['甜'], scenes:['办公室','深夜放毒'], price:12, cal:'中', stars:4,
+    desc:'醇厚微苦，回甘悠长。',
+    reason:'加班深夜来一块，提神治愈两不误。' },
+  { name:'焦糖爆米花', emoji:'🍿', taste:['甜'], scenes:['追剧'], price:8, cal:'中', stars:4,
+    desc:'裹满焦糖的云朵，甜脆上头。',
+    reason:'追剧仪式感担当，配电影快乐翻倍。' },
+  { name:'酸奶冻干块', emoji:'🥛', taste:['甜','酸'], scenes:['办公室','野餐出游'], price:10, cal:'低', stars:4,
+    desc:'酸奶块入口即化，果粒酸甜点缀。',
+    reason:'健康小零食，办公室抽屉常备款。' },
+  { name:'香辣小鱼干', emoji:'🐟', taste:['辣','咸'], scenes:['深夜放毒','解馋抗压'], price:6, cal:'低', stars:4,
+    desc:'酥脆小鱼，香辣过瘾钙质满满。',
+    reason:'下酒追剧两相宜，越嚼越上头。' },
+  { name:'日式米饼', emoji:'🍘', taste:['咸'], scenes:['办公室'], price:5, cal:'低', stars:3,
+    desc:'轻薄酥脆，米香混着淡淡酱油香。',
+    reason:'清淡挂首选，配一杯绿茶刚刚好。' },
+  { name:'果汁软糖', emoji:'🍬', taste:['甜','酸'], scenes:['野餐出游','追剧'], price:4, cal:'中', stars:4,
+    desc:'Q弹爆汁，酸酸甜甜水果味。',
+    reason:'出门野餐分一圈，人人夸你会买。' },
+  { name:'黑胡椒肉脯', emoji:'🥓', taste:['咸'], scenes:['深夜放毒','解馋抗压'], price:11, cal:'中', stars:5,
+    desc:'炭烤香气，黑胡椒微辣带劲。',
+    reason:'深夜放毒头牌，肉食动物闭眼入。' },
+  { name:'五香瓜子', emoji:'🌻', taste:['咸'], scenes:['追剧','野餐出游'], price:4, cal:'中', stars:4,
+    desc:'颗颗饱满，五香入味。',
+    reason:'唠嗑追剧必备，嗑起来就停不下。' },
+  { name:'酸辣粉', emoji:'🍜', taste:['辣','酸'], scenes:['深夜放毒'], price:6, cal:'高', stars:5,
+    desc:'酸辣过瘾，粉条爽滑汤底浓郁。',
+    reason:'深夜emo救星，一碗下肚全部治愈。' },
+  { name:'糯米锅巴', emoji:'🍚', taste:['咸'], scenes:['追剧','解馋抗压'], price:5, cal:'高', stars:4,
+    desc:'酥脆掉渣，咸香满口米香。',
+    reason:'嘎嘣脆的快乐，追剧搭子+1。' },
+  { name:'柠檬酸辣无骨鸡爪', emoji:'🍗', taste:['辣','酸'], scenes:['深夜放毒','解馋抗压'], price:12, cal:'中', stars:5,
+    desc:'网红零食榜常客，柠檬腌渍酸辣爽口，无骨啃起来超带劲。',
+    reason:'年轻人零食之王候选，无骨的快乐谁吃谁懂。' },
+  { name:'王小卤虎皮凤爪', emoji:'🍖', taste:['辣','咸'], scenes:['追剧','解馋抗压'], price:15, cal:'中', stars:5,
+    desc:'先炸后卤，皮酥肉糯，一抿脱骨，独立小包随时开啃。',
+    reason:'直播间常年顶流，肉食党闭眼囤，一个根本不够吃。' },
+  { name:'迪拜巧克力', emoji:'🥜', taste:['甜'], scenes:['办公室','解馋抗压'], price:16, cal:'中', stars:5,
+    desc:'开心果酱+脆脆丝状内馅，中东风味浓郁，一口爆浆。',
+    reason:'火遍全网的顶流网红，搜索量暴涨342倍的甜蜜炸弹。' },
+  { name:'蛋黄酥', emoji:'🥮', taste:['甜','咸'], scenes:['办公室','野餐出游'], price:8, cal:'中', stars:4,
+    desc:'层层酥皮裹着整颗咸蛋黄，雪媚娘皮拉丝，油润起沙。',
+    reason:'甜咸永动机，下午茶配茶一绝，过节囤货硬通货。' },
+  { name:'海盐小圆饼', emoji:'🥨', taste:['咸'], scenes:['办公室','野餐出游'], price:4, cal:'中', stars:3,
+    desc:'嘎嘣脆的小饼干，海盐清香不齁不腻。',
+    reason:'5元以内的纯粹快乐，下午配咖啡刚刚好。' },
+  { name:'俄罗斯紫皮糖', emoji:'🍭', taste:['甜'], scenes:['追剧','野餐出游'], price:7, cal:'高', stars:3,
+    desc:'脆皮巧克力裹着焦糖杏仁碎，香甜有层次。',
+    reason:'甜度爆表的快乐糖，追剧囤一袋慢慢嗑。' },
+  { name:'夹心海苔', emoji:'🍃', taste:['咸'], scenes:['办公室','深夜放毒'], price:8, cal:'低', stars:4,
+    desc:'脆海苔夹着扁桃仁脆片，双重口感满口鲜香。',
+    reason:'酥脆轻负担，深夜嘴馋的进阶之选。' },
+  { name:'烤地瓜干', emoji:'🍠', taste:['甜'], scenes:['办公室','野餐出游'], price:6, cal:'中', stars:4,
+    desc:'整根小香薯烤制后倒糖心，软糯有嚼劲，自然清甜。',
+    reason:'粗粮纤维天然甜，减脂期也能放心啃。' },
+  { name:'手撕鸡肉干', emoji:'🥩', taste:['辣','咸'], scenes:['办公室','解馋抗压'], price:13, cal:'低', stars:5,
+    desc:'风干鸡胸肉条，麻辣有嚼劲，高蛋白扛饿。',
+    reason:'健身党同款解馋神器，越嚼越香还顶饿。' },
+  { name:'综合果蔬脆', emoji:'🥗', taste:['咸'], scenes:['办公室','野餐出游'], price:10, cal:'中', stars:4,
+    desc:'秋葵、香菇、香蕉等十几种果蔬真空脱水，酥脆不腻。',
+    reason:'吃蔬菜的快乐酥脆版，一罐能嗑一星期。' },
+  { name:'香葱苏打饼干', emoji:'🥠', taste:['咸'], scenes:['办公室'], price:6, cal:'低', stars:3,
+    desc:'碱性苏打饼干，葱香清淡，养胃不刺激。',
+    reason:'下午茶清淡挂选手，配茶配奶都合适。' },
+  { name:'藤椒小麻花', emoji:'🪢', taste:['辣','咸'], scenes:['追剧','解馋抗压'], price:6, cal:'高', stars:4,
+    desc:'一口一个的迷你麻花，藤椒麻香酥脆掉渣。',
+    reason:'嘎嘣嘎嘣根本停不下来，追剧嘴巴的最佳搭子。' },
+  { name:'一口小香肠', emoji:'🌭', taste:['咸'], scenes:['深夜放毒','追剧'], price:8, cal:'中', stars:4,
+    desc:'拇指大小的迷你烤肠，外皮脆弹肉感十足。',
+    reason:'一口一个的小确幸，深夜追剧肉香炸弹。' },
+  { name:'肉松吐司', emoji:'🍞', taste:['咸','甜'], scenes:['办公室'], price:7, cal:'中', stars:4,
+    desc:'满满肉松+沙拉酱吐司，外脆里软咸香交织。',
+    reason:'碳水+肉松双重快乐，下午饿了的救星。' },
+  { name:'蒸鹰嘴豆', emoji:'🫘', taste:['咸'], scenes:['办公室'], price:5, cal:'低', stars:4,
+    desc:'清蒸鹰嘴豆软糯清甜，高膳食纤维轻负担。',
+    reason:'减脂加餐宝藏小豆，饱腹解馋两不误。' },
+  { name:'带籽鱿鱼仔', emoji:'🐙', taste:['咸'], scenes:['追剧','深夜放毒'], price:12, cal:'中', stars:5,
+    desc:'整只鱿鱼仔满满鱿鱼籽，开袋即食鲜香弹牙。',
+    reason:'一口爆籽的满足感，海鲜零食的天花板。' },
+  { name:'山姆瑞士卷', emoji:'🍰', taste:['甜'], scenes:['办公室','野餐出游'], price:14, cal:'高', stars:5,
+    desc:'顺滑奶油+绵密蛋糕体，冷藏后口感更佳。',
+    reason:'网红甜品界的常青树，一盒在手快乐我有。' },
+  { name:'九制话梅', emoji:'🫒', taste:['酸'], scenes:['追剧','野餐出游'], price:4, cal:'低', stars:3,
+    desc:'酸甜咸交织的老式话梅，一颗生津回味久。',
+    reason:'酸到口水直流的提神神器，坐车出游必备。' },
+  { name:'果汁果冻', emoji:'🍮', taste:['甜','酸'], scenes:['野餐出游','追剧'], price:4, cal:'低', stars:3,
+    desc:'芒果白桃果味十足，冰凉Q弹吸着吃。',
+    reason:'低卡小甜水，冰一下更好吃，小朋友抢着要。' },
+];
+
+const COLORS = [
+  ['#ffe985','#e0c55c'], ['#ffc2d1','#e898ac'], ['#c4f0d4','#93d4a8'],
+  ['#c5e3ff','#9cc3e8'], ['#ffd9a0','#e8b573'], ['#e6d7f5','#c3aede'],
+];
+const PINS = ['#e63946','#3a86ff','#2a9d34','#f77f00','#8338ec','#ff5d8f'];
+
+SNACKS.forEach((s,i)=>{
+  s.id = i;
+  s._bg = COLORS[i % COLORS.length][0];
+  s._fold = COLORS[i % COLORS.length][1];
+  s._rot = (((i * 37) % 9) - 4) + 'deg';
+  s._pin = PINS[i % PINS.length];
+  s._tape = i % 3 === 0;
+});
+
+const sel = { taste:'', scene:'', budget:'', slim:false };
+let lastPool = null, lastMainId = null;
+
+const wall = document.getElementById('wall');
+const result = document.getElementById('result');
+const resultBody = document.getElementById('resultBody');
+const overlay = document.getElementById('overlay');
+const detailCard = document.getElementById('detailCard');
+const noteEls = {};
+
+function starStr(n){ return '★'.repeat(n) + '☆'.repeat(5-n); }
+
+function renderWall(){
+  wall.innerHTML = '';
+  SNACKS.forEach((s,i)=>{
+    const el = document.createElement('div');
+    el.className = 'note';
+    el.style.background = s._bg;
+    el.style.setProperty('--fold', s._fold);
+    el.style.setProperty('--rot', s._rot);
+    el.style.animationDelay = (i * 40) + 'ms';
+    el.innerHTML =
+      (s._tape ? '<span class="tape"></span>' : '<span class="pin" style="--pc:' + s._pin + '"></span>') +
+      '<span class="emoji">' + s.emoji + '</span>' +
+      '<span class="name">' + s.name + '</span>' +
+      '<span class="meta">' + s.cal + '卡 · ' + starStr(s.stars) + '</span>' +
+      '<span class="price">¥' + s.price + '</span>';
+    el.addEventListener('click', ()=>showDetail(s));
+    noteEls[s.id] = el;
+    wall.appendChild(el);
+  });
+}
+
+function budgetOk(p){
+  switch(sel.budget){
+    case 'lt5': return p < 5;
+    case '5to10': return p >= 5 && p <= 10;
+    case 'gt10': return p > 10;
+    default: return true;
+  }
+}
+
+function getMatches(){
+  return SNACKS.filter(s =>
+    (!sel.taste || s.taste.includes(sel.taste)) &&
+    (!sel.scene || s.scenes.includes(sel.scene)) &&
+    budgetOk(s.price) &&
+    (!sel.slim || s.cal === '低')
+  );
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function pickFrom(pool){
+  if(pool.length === 1) return pool[0];
+  let candidates = pool.filter(s => s.id !== lastMainId);
+  if(!candidates.length) candidates = pool;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function noteTags(s){
+  return ['¥' + s.price, s.cal + '卡', ...s.taste.map(t=>t+'口'), ...s.scenes]
+    .map(t=>'<span class="tag">' + t + '</span>').join('');
+}
+
+function recommend(random, poolOverride){
+  const pool = poolOverride || (random ? SNACKS.slice() : getMatches());
+  lastPool = pool;
+  if(!pool.length){
+    resultBody.innerHTML =
+      '<div class="empty-note"><span class="pin" style="--pc:#8338ec"></span>' +
+      '啊哦……这个条件下的便签都被撕光了 🥲<br>换个条件，或者干脆「随便撕一张」！</div>';
+    Object.values(noteEls).forEach(el=>el.classList.add('dim'));
+    result.hidden = false;
+    result.scrollIntoView({ behavior:'smooth', block:'start' });
+    return;
+  }
+  const main = pickFrom(pool);
+  lastMainId = main.id;
+  const alts = shuffle(pool.filter(s=>s.id!==main.id)).slice(0,2);
+
+  resultBody.innerHTML =
+    '<div class="main-note" style="background:' + main._bg + '">' +
+      '<span class="pin" style="--pc:#e63946; width:22px; height:22px; margin-left:-11px;"></span>' +
+      '<span class="ribbon">今日翻牌</span>' +
+      '<span class="emoji">' + main.emoji + '</span>' +
+      '<span class="name">' + main.name + '</span>' +
+      '<span class="stars">' + starStr(main.stars) + '</span>' +
+      '<div class="tags">' + noteTags(main) + '</div>' +
+      '<div class="reason"><b>推荐理由：</b>' + main.reason + '</div>' +
+      '<button type="button" class="detail-open" data-id="' + main.id + '">👀 翻开便签看详情</button>' +
+    '</div>' +
+    (alts.length ? '<div class="alt-title">实在纠结的话，这里还有两张备选便签 ↓</div>' +
+      '<div class="alts">' + alts.map((s,i)=>
+        '<div class="alt-note" data-id="' + s.id + '" style="background:' + s._bg + '; --rot:' + (i? '2.4deg':'-2deg') + '">' +
+        '<span class="pin" style="--pc:' + s._pin + '"></span>' +
+        '<span class="emoji">' + s.emoji + '</span>' +
+        '<span class="name">' + s.name + '</span>' +
+        '<span class="meta">¥' + s.price + ' · ' + s.cal + '卡</span></div>').join('') +
+      '</div>' : '');
+
+  Object.entries(noteEls).forEach(([id, el])=>{
+    el.classList.remove('dim','hit','champ');
+    const inPool = pool.some(s=>s.id == id);
+    if(!inPool){ el.classList.add('dim'); }
+    else{
+      el.classList.add('hit');
+      if(id == main.id) el.classList.add('champ');
+    }
+  });
+
+  resultBody.querySelectorAll('[data-id]').forEach(el=>{
+    el.addEventListener('click', ()=>showDetail(SNACKS[+el.dataset.id]));
+  });
+
+  result.hidden = false;
+  result.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function clearResult(){
+  result.hidden = true;
+  lastPool = null; lastMainId = null;
+  Object.values(noteEls).forEach(el=>el.classList.remove('dim','hit','champ'));
+}
+
+function showDetail(s){
+  detailCard.style.background = s._bg;
+  detailCard.innerHTML =
+    '<span class="tape"></span>' +
+    '<span class="emoji">' + s.emoji + '</span>' +
+    '<span class="name">' + s.name + '</span>' +
+    '<span class="stars">' + starStr(s.stars) + '</span>' +
+    '<div class="tags">' + noteTags(s) + '</div>' +
+    '<div class="info">口味：' + s.taste.join(' / ') + ' ｜ 热量：' + s.cal + '卡 ｜ 参考价：¥' + s.price + '<br>适合场景：' + s.scenes.join('、') + '</div>' +
+    '<div class="desc"><b>便签背面写着：</b>' + s.desc + '</div>' +
+    '<div class="reason" style="width:100%; text-align:left; font-size:15px; line-height:1.8; background:rgba(255,255,255,.6); border-left:4px solid #e07b00; padding:9px 12px;"><b>推荐理由：</b>' + s.reason + '</div>' +
+    '<button type="button" class="close-btn">✕ 贴回墙上</button>';
+  overlay.hidden = false;
+}
+
+document.querySelectorAll('.chip[data-g]').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    sel[chip.dataset.g] = chip.dataset.v;
+    document.querySelectorAll('.chip[data-g="' + chip.dataset.g + '"]').forEach(c=>c.classList.toggle('on', c===chip));
+    clearResult();
+  });
+});
+
+document.getElementById('slimChip').addEventListener('click', function(){
+  sel.slim = !sel.slim;
+  this.classList.toggle('on', sel.slim);
+  clearResult();
+});
+
+document.getElementById('goBtn').addEventListener('click', ()=>recommend(false));
+document.getElementById('luckyBtn').addEventListener('click', ()=>recommend(true));
+document.getElementById('againBtn').addEventListener('click', ()=>{
+  recommend(false, (lastPool && lastPool.length) ? lastPool : null);
+});
+
+overlay.addEventListener('click', e=>{ if(e.target === overlay) overlay.hidden = true; });
+detailCard.addEventListener('click', e=>{ if(e.target.classList.contains('close-btn')) overlay.hidden = true; });
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape') overlay.hidden = true; });
+
+document.getElementById('wallCount').textContent = SNACKS.length;
+renderWall();
+</script>
+</body>
+</html>
